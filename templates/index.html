@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Hub & Tweet Composer</title>
+    <!-- Google Fonts: Outfit for sleek typography, Fira Code for code blocks -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for high-quality vector icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Premium background glowing blobs -->
+    <div class="glow-blob glow-1"></div>
+    <div class="glow-blob glow-2"></div>
+    <div class="glow-blob glow-3"></div>
+
+    <div class="app-container">
+        <!-- Sidebar / Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-wrapper">
+                    <i class="fa-solid fa-database logo-icon"></i>
+                    <div class="logo-pulse"></div>
+                </div>
+                <div class="brand-text">
+                    <h1>BigQuery</h1>
+                    <span class="sub-brand">Release Notes Hub</span>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <div class="status-indicator">
+                    <span class="status-dot green"></span>
+                    <span id="status-text" class="status-label">Loading feed...</span>
+                </div>
+                <button id="btn-refresh" class="btn btn-primary" title="Refresh Release Notes">
+                    <i id="icon-refresh" class="fa-solid fa-arrows-rotate"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Layout Grid -->
+        <main class="app-layout">
+            <!-- Left Panel: Feed Section -->
+            <section class="feed-section">
+                <!-- Search and Filtering Bar -->
+                <div class="filter-panel glass-panel">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Search release notes by keywords (e.g. Gemini, GA, export)..." autocomplete="off">
+                        <button id="btn-clear-search" class="clear-search-btn" style="display: none;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="category-filters-container">
+                        <span class="filter-label">Filter Category:</span>
+                        <div class="category-filters">
+                            <button class="filter-btn active" data-category="all">
+                                <i class="fa-solid fa-list-check"></i> All Updates
+                            </button>
+                            <button class="filter-btn" data-category="feature">
+                                <i class="fa-solid fa-wand-magic-sparkles text-feature"></i> Features
+                            </button>
+                            <button class="filter-btn" data-category="announcement">
+                                <i class="fa-solid fa-bullhorn text-announcement"></i> Announcements
+                            </button>
+                            <button class="filter-btn" data-category="issue">
+                                <i class="fa-solid fa-triangle-exclamation text-issue"></i> Issues
+                            </button>
+                            <button class="filter-btn" data-category="other">
+                                <i class="fa-solid fa-ellipsis text-other"></i> Other
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feed Cards List -->
+                <div class="feed-container">
+                    <!-- Shimmer Loading State -->
+                    <div id="feed-shimmer" class="shimmer-container">
+                        <div class="shimmer-card">
+                            <div class="shimmer-line line-short"></div>
+                            <div class="shimmer-line line-title"></div>
+                            <div class="shimmer-line line-body"></div>
+                            <div class="shimmer-line line-body"></div>
+                        </div>
+                        <div class="shimmer-card">
+                            <div class="shimmer-line line-short"></div>
+                            <div class="shimmer-line line-title"></div>
+                            <div class="shimmer-line line-body"></div>
+                        </div>
+                        <div class="shimmer-card">
+                            <div class="shimmer-line line-short"></div>
+                            <div class="shimmer-line line-title"></div>
+                            <div class="shimmer-line line-body"></div>
+                            <div class="shimmer-line line-body"></div>
+                        </div>
+                    </div>
+
+                    <!-- Error Alert -->
+                    <div id="error-alert" class="alert alert-danger glass-panel" style="display: none;">
+                        <i class="fa-solid fa-circle-exclamation alert-icon"></i>
+                        <div class="alert-content">
+                            <h4>Error Fetching Notes</h4>
+                            <p id="error-message">Could not load release notes from the server.</p>
+                        </div>
+                        <button id="btn-retry" class="btn btn-outline btn-sm">Retry</button>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="empty-state" class="empty-state glass-panel" style="display: none;">
+                        <i class="fa-solid fa-magnifying-glass-minus empty-icon"></i>
+                        <h3>No release notes match your query</h3>
+                        <p>Try checking your spelling or adjusting your category filter.</p>
+                        <button id="btn-clear-filters" class="btn btn-secondary">Clear Search & Filters</button>
+                    </div>
+
+                    <!-- Real Cards List -->
+                    <div id="notes-list" class="notes-list" style="display: none;"></div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Sticky Composer Panel -->
+            <aside class="composer-sidebar">
+                <div class="composer-container glass-panel sticky-element">
+                    <!-- Composer Header -->
+                    <div class="composer-header">
+                        <i class="fa-solid fa-pen-nib composer-header-icon"></i>
+                        <h3>Tweet Composer</h3>
+                    </div>
+
+                    <!-- Empty selection placeholder -->
+                    <div id="composer-empty-state" class="composer-empty">
+                        <div class="empty-composer-illustration">
+                            <div class="twitter-icon-circle">
+                                <i class="fa-brands fa-x-twitter"></i>
+                            </div>
+                        </div>
+                        <h4>No Update Selected</h4>
+                        <p>Select any release note card on the left to customize and draft a Tweet about it.</p>
+                    </div>
+
+                    <!-- Active Composer Panel (hidden by default) -->
+                    <div id="composer-active-state" class="composer-active" style="display: none;">
+                        <div class="selected-details">
+                            <div class="selected-meta">
+                                <span id="composer-badge" class="badge">Feature</span>
+                                <span id="composer-date" class="date-label">June 17, 2026</span>
+                            </div>
+                            <div id="composer-original-link-wrapper" class="original-link-wrapper">
+                                <a id="composer-original-link" href="#" target="_blank" rel="noopener noreferrer">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> View official docs
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Tweet Preview Box -->
+                        <div class="tweet-box-wrapper">
+                            <div class="tweet-user-profile">
+                                <div class="user-avatar">
+                                    <i class="fa-solid fa-user-ninja"></i>
+                                </div>
+                                <div class="user-info">
+                                    <span class="user-name">GCP Cloud Architect</span>
+                                    <span class="user-handle">@gcp_tracker</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Main text area for drafting tweet -->
+                            <textarea id="tweet-textarea" rows="7" placeholder="What's happening?"></textarea>
+                            
+                            <!-- Character Counter and Helper -->
+                            <div class="tweet-footer">
+                                <span class="help-text">Links automatically shrink on X (Twitter).</span>
+                                <div id="char-counter" class="char-counter">
+                                    <svg class="progress-ring" width="24" height="24">
+                                        <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.1)" stroke-width="2" fill="transparent" r="9" cx="12" cy="12"/>
+                                        <circle id="progress-indicator" class="progress-ring__circle" stroke="var(--primary)" stroke-width="2.5" fill="transparent" r="9" cx="12" cy="12"/>
+                                    </svg>
+                                    <span id="char-count-text">280</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="composer-actions">
+                            <button id="btn-copy-tweet" class="btn btn-outline-primary btn-full">
+                                <i class="fa-solid fa-copy"></i>
+                                <span>Copy Tweet Text</span>
+                            </button>
+                            <button id="btn-publish-tweet" class="btn btn-twitter btn-full">
+                                <i class="fa-brands fa-x-twitter"></i>
+                                <span>Tweet on X</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Mobile Drawer for Composer (Slide up bottom sheet) -->
+    <div id="mobile-composer-overlay" class="mobile-overlay" style="display: none;">
+        <div class="mobile-sheet glass-panel">
+            <div class="sheet-handle-wrapper">
+                <div class="sheet-handle"></div>
+            </div>
+            <div class="sheet-header">
+                <h3><i class="fa-solid fa-pen-nib"></i> Tweet Composer</h3>
+                <button id="btn-close-sheet" class="close-sheet-btn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="mobile-composer-body" class="sheet-body">
+                <!-- Javascript will duplicate active composer state here for mobile -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" style="display: none;">
+        <i class="fa-solid fa-circle-check toast-icon"></i>
+        <span id="toast-message">Copied to clipboard!</span>
+    </div>
+
+    <!-- JS Logic -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
